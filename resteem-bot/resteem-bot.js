@@ -240,44 +240,56 @@ function logPublically(memo, to, amount, currency) {
 
 function updateFollowerList(lastFollowerUsername) {
 
-	if (lastFollowerUsername === null || lastFollowerUsername === undefined)
-		lastFollowerUsername = null;
+if (lastFollowerUsername === null || lastFollowerUsername === undefined)
+    lastFollowerUsername = null;
 
-	var followerBatchSize = 1000
-	steem.api.getFollowers(botUserData.name, lastFollowerUsername, "blog", followerBatchSize, function (err, result) {
-		if (!err) {
-			var names = result.map(function (f) { return f.follower; });
-			if (lastFollowerUsername === names[0])
-				names.splice(0, 1);
+var followerBatchSize = 500
+//var followerBatchSize = 50 //for following list
 
-			log("Refreshing Followers : found " + names.length);
-			//log(names);
+    steem.api.getFollowers(botUserData.name, lastFollowerUsername, "blog", followerBatchSize, function (err, result) {
+//steem.api.getFollowing(botUserData.name, lastFollowerUsername, "blog", followerBatchSize, function (err, result) {  //for following list
+    if (!err) {
+        //var names = result.map(function (f) { return f.following; });  //for following list
+        var names = result.map(function (f) { return f.follower; });
+        if (lastFollowerUsername === names[0])
+            names.splice(0, 1);
 
-			steem.api.getAccounts(names, function (e, users) {
-				if (!err) {
-					for (var i = 0; i < users.length; i++) {
-						var user = users[i];
-						var reputation = steem.formatter.reputation(user.reputation);
+        log("Refreshing Followers : found " + names.length);
+        //log(names);
 
-						followers[user.name] = { reputation: reputation };
-					}
-				} else {
-					log(err);
-				}
-			});
+        steem.api.getAccounts(names, function (e, users) {
+            if (!err) {
+                for (var i = 0; i < users.length; i++) {
+                    var user = users[i];
+                    var reputation = steem.formatter.reputation(user.reputation);
+                    //log(user.name);
+                    followers[user.name] = { reputation: reputation };
+                    //log(followers[user.name]);
+                }
+            } else {
+                log(err);
+            }
+        });
 
-			if (result.length == followerBatchSize)
-				updateFollowerList(names[names.length - 1]);
-			else {
-				setTimeout(function(){				
-					saveFollowerList();
-				}, 5000);
-			}
+        if (result.length === followerBatchSize)
+            //updateFollowerList(names[names.length - 1]);
+            
+            setTimeout(function() {
+            updateFollowerList(names[names.length - 1]);
+        }, 2000);
+            
+        else {
+            log("Saving list now!");
+            setTimeout(function() {
+            saveFollowerList();
+        }, 5000);
+            //saveFollowerList();
+        }
 
-		} else {
-			log(err);
-		}
-	});
+    } else {
+        log(err);
+    }
+});
 }
 
 function setLastHandledTransaction(lastIndex) {
